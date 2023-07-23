@@ -22,13 +22,12 @@ int CmpFunc(const void * a, const void * b) {
 void Lower(int j) {
     int i = 0,k = 0, l = 0;
 
-    /* Sends the biggest of the list and receive the smallest of the list */
+    /* Sends the list related to this process and receives the list from its paired process*/
 
-    // Send entire array to paired H Process
-    // Exchange with a neighbor whose (d-bit binary) processor number differs only at the jth bit.
+    // Send entire array to paired Process
     int * buffer_send = malloc((array_size) * sizeof(int));
 
-    // Receive new min of sorted numbers
+    // Receive new array of sorted numbers
     int * buffer_recieve = malloc((array_size) * sizeof(int));
 
     //Initializing buffer_send
@@ -37,28 +36,28 @@ void Lower(int j) {
         buffer_send[z] = array[z];
     }
     
-    // send partition to paired H process
+    // send partition to paired process
     MPI_Send(
-        buffer_send,                // Send values that are greater than min
-        array_size,               // # of items sent
+        buffer_send,                // Sends the sorted array
+        array_size,                 // # of items sent
         MPI_INT,                    // INT
-        rank ^ (1 << j),    // paired process calc by XOR with 1 shifted left j positions
+        rank ^ (1 << j),            // paired process calc by XOR with 1 shifted left j positions
         0,                          // tag 0
         MPI_COMM_WORLD              // default comm.
     );
   
-    // receive info from paired H process
+    // receive info from paired process
     MPI_Recv(
         buffer_recieve,             // buffer the message
         array_size,                 // whole array
         MPI_INT,                    // INT
-        rank ^ (1 << j),    // paired process calc by XOR with 1 shifted left j positions
+        rank ^ (1 << j),            // paired process calc by XOR with 1 shifted left j positions
         0,                          // tag 0
         MPI_COMM_WORLD,             // default comm.
         MPI_STATUS_IGNORE           // ignore info about message received
     );
-    // Take received buffer of values from H Process which are smaller than current max
 
+    // take the smaller items in the size of the array
     while (l<array_size)
     {
         if (buffer_send[i] > buffer_recieve[k]) {
@@ -73,7 +72,7 @@ void Lower(int j) {
         l++;
     }
     
-    // Reset the state of the heap from Malloc
+    // free memory allocations
     free(buffer_send);
     free(buffer_recieve);
 
@@ -97,7 +96,7 @@ void Upper(int j) {
         buffer_recieve,             // buffer message
         array_size,                 // whole array
         MPI_INT,                    // INT
-        rank ^ (1 << j),    // paired process calc by XOR with 1 shifted left j positions
+        rank ^ (1 << j),            // paired process calc by XOR with 1 shifted left j positions
         0,                          // tag 0
         MPI_COMM_WORLD,             // default comm.
         MPI_STATUS_IGNORE           // ignore info about message receiveds
@@ -112,9 +111,9 @@ void Upper(int j) {
     // send partition to paired slave
     MPI_Send(
         buffer_send,                // all items smaller than max value
-        array_size,               // # of values smaller than max
+        array_size,                 // # of values smaller than max
         MPI_INT,                    // INT
-        rank ^ (1 << j),    // paired process calc by XOR with 1 shifted left j positions
+        rank ^ (1 << j),            // paired process calc by XOR with 1 shifted left j positions
         0,                          // tag 0
         MPI_COMM_WORLD              // default comm.
     );
@@ -124,11 +123,11 @@ void Upper(int j) {
     {
         if (buffer_send[array_size-i-1] < buffer_recieve[array_size-k-1]) {
             // Store value from message
-            array[l] = buffer_recieve[array_size-k-1];
+            array[array_size-l-1] = buffer_recieve[array_size-k-1];
             k++;
         }
         else{
-            array[l] = buffer_send[array_size-i-1];
+            array[array_size-l-1] = buffer_send[array_size-i-1];
             i++;
         }
         l++;
@@ -202,7 +201,6 @@ int main(int argc, char * argv[]) {
     }
 
     free(array);
-
     MPI_Finalize();
     return 0;
 }

@@ -1,3 +1,4 @@
+/* credit goes to adrianlee https://github.com/adrianlee/mpi-bitonic-sort*/
 
 # Bitonic Sorting
 
